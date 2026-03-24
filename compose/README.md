@@ -1,5 +1,44 @@
 # Compose
 
+## Что исследовать
+interface Composition
+
+@StateFactoryMarker
+public fun <T> mutableStateOf(
+    value: T,
+    policy: SnapshotMutationPolicy<T> = structuralEqualityPolicy(),
+): MutableState<T> = createSnapshotMutableState(value, policy)
+
+@Stable
+public interface State<out T> {
+    public val value: T
+}
+
+public inline operator fun <T> State<T>.getValue(thisObj: Any?, property: KProperty<*>): T = value
+
+public inline operator fun <T> MutableState<T>.setValue(
+    thisObj: Any?,
+    property: KProperty<*>,
+    value: T,
+) {
+    this.value = value
+}
+
+@Stable
+public interface MutableState<T> : State<T> {
+    override var value: T
+
+    public operator fun component1(): T
+
+    public operator fun component2(): (T) -> Unit
+}
+
+public fun <T> mutableStateListOf(): SnapshotStateList<T> = SnapshotStateList<T>()
+
+public fun <K, V> mutableStateMapOf(): SnapshotStateMap<K, V> = SnapshotStateMap<K, V>()
+
+public fun <T> mutableStateSetOf(): SnapshotStateSet<T> = SnapshotStateSet<T>()
+
 ## Side Effects
 [Документация en](https://developer.android.com/develop/ui/compose/side-effects)
 
