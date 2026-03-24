@@ -3,8 +3,12 @@
 ## Side Effects
 [Документация en](https://developer.android.com/develop/ui/compose/side-effects)
 
+В Jetpack Compose под side effects понимают любые действия, которые выходят за рамки чистого вычисления UI и могут повлиять на внешний мир или состояние вне композиции.
+
 ### [LaunchedEffect](https://developer.android.com/develop/ui/compose/side-effects#launchedeffect)
 Что это: может запустить корутину при входе в композицию или при изменении ключей. Корутина отменяется при выходе из композиции.
+
+Выполняетсяя на `Dispatchers.Main.immediate`
 
 Для чего:
 - однократные запросы данных
@@ -24,14 +28,14 @@
 Пример:
 
 ```kotin
-DisposableEffect(Unit) {
-    val listener = ...
-    view.addListener(listener)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.addObserver(viewModel)
 
-    onDispose {
-        view.removeListener(listener)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(viewModel)
+        }
     }
-}
 ```
 
 ### [SideEffect](https://developer.android.com/develop/ui/compose/side-effects#sideeffect-publish)
@@ -54,6 +58,8 @@ DisposableEffect(Unit) {
 Обновляет ссылку на последнее значение, используется для корректной работы замыканий в LaunchedEffect/DisposableEffect.
 
 Пример:
+Без него — замкнётся устаревшая версия колбэка.
+
 ```kotlin
 val onTimeoutUpdated by rememberUpdatedState(onTimeout)
 
@@ -63,7 +69,18 @@ LaunchedEffect(Unit) {
 }
 ```
 
+Под капотом:
+```kotlin
+@Composable
+public fun <T> rememberUpdatedState(newValue: T): State<T> = remember {
+    mutableStateOf(newValue)
+}.apply {
+    value = newValue
+}
+```
+
 ### [produceState](https://developer.android.com/develop/ui/compose/side-effects#producestate)
+//TODO перепроверить и обновить описание
 Что это: создаёт State и управляет его значением внутри корутины.
 
 На самом деле это замена LiveData для Compose.
@@ -74,10 +91,21 @@ LaunchedEffect(Unit) {
 - объединение Flow → State
 - создание state-driven логики
 
+Что делает:
+
+- мостик между suspend API и Compose State
+- внутри — корутина
+- возвращает State<T>
+
+📌 Кейсы:
+
+- простая загрузка данных
+- адаптация Flow / suspend-функций
+
 Пример:
 ```kotlin
-val data by produceState(initialValue = emptyList()) {
-    value = repository.loadData()
+val uiState by produceState<UiState>(UiState.Loading) {
+    value = repository.load()
 }
 ```
 
