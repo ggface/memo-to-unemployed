@@ -1,5 +1,6 @@
 # Памятка разработчика приложений для Android
 
+- [Kotlin](./kotlin/README.md)
 - [Java Core](./java-core/README.md)
 - [JVM](./jvm/README.md)
 - [Concurrency](./concurrency/README.md)
