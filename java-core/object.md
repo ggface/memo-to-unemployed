@@ -1,21 +1,28 @@
 # Object
 
-## 📌 Что это
+## Методы
 
-`Object` — базовый класс для всех классов в Java.
+- equals
+- hashCode
+- toString
+- clone
+- getClass
+- finalize
+- wait
+- notify
+- notifyAll
 
-## 🔑 Основные методы
+## Принципы equals
 
-- `equals()`
-- `hashCode()`
-- `toString()`
-- `clone()`
-- `finalize()`
+**Рефлексивность** — x.equals(x) возвращает true
 
-## ⚠️ Важно
+**Симметричность** — x.equals(y) <=> y.equals(x)
 
-- equals и hashCode должны быть согласованы
-- нарушение контракта ломает коллекции
+**Транзитивность** — x.equals(y) <=> y.equals(z) <=> x.equals(z)
+
+**Согласованность** — повторный вызов x.equals(y) должен возвращать значение предыдущего вызова, если сравниваемые поля не изменялись
+
+**Сравнение с null** — x.equals(null) возвращает false
 
 ## 💻 Примеры
 
