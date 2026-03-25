@@ -6,3 +6,6 @@
 - [Concurrency](./concurrency/README.md)
 - [Android SDK](./android-sdk/README.md)
 - [Jetpack Compose](./compose/README.md)
+- [Архитектура](./architecture/README.md)
+- [Собесы](./interview/README.md)
+- [Безопасность](./security/README.md) 
