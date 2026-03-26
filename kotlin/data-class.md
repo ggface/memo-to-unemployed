@@ -9,7 +9,7 @@
 
 * Пара `equals()`/`hashCode()`
 * `toString()`
-* `componentN()`
+* [`componentN()`](README.md#деструктуризация)
 * `copy()`
 
 Primary constructor должен иметь минимум одну property.
@@ -17,6 +17,8 @@ Primary constructor должен иметь минимум одну property.
 Все аргументы конструктора должны быть val или var.
 
 Дата-классы не могут быть abstract, open, sealed или inner.
+
+Могут наследоваться от обычных классов, ограничения обычные
 
 ### Модификаторы
 
@@ -45,39 +47,23 @@ object Inheritance {
 }
 ```
 
-Инициализация объявления объекта является потокобезопасной и выполняется при первом обращении к объекту.
+### Копирование
 
-companion object инициализируется при загрузке соответствующего класса, что соответствует семантике Java static initializer.
+При копировании можно получить доступ к private property
 
 ```kotlin
-// Самостоятельный object 
-object Singleton
+data class Person(
+    private val age: Int,
+    val name: String
+)
 
-// Сопутствующий объект
-class Product {
-    
-    companion object Factory {
-        
-        private const val LOG_TAG = "sys_product"
-        
-        fun create() : Product = TODO()
+fun main() {
+    val copy = Person(17, "Маша").let {
+        it.name // Очевидно есть доступ
+        it.age // Ошибка компиляции, нет доступа
+
+        it.copy(age = 27) // Создаем новый Person через копирование
     }
-}
-
-// Анонимный объект
-val listener = object : MouseAdapter() {
-    override fun mouseClicked(e: MouseEvent) = TODO()
-    override fun mouseEntered(e: MouseEvent) = TODO()
-}
-
-// Анонимный объект
-fun foo() {
-    val preferences = object {
-        val theme = "Dark"
-    }
-    val theme = preferences.theme
+    println(copy) // Obj(age=27, name=Маша)
 }
 ```
-
-[Смотреть код](./src/main/kotlin/KotlinObject.kt)
-
