@@ -204,3 +204,30 @@ TODO
 
 ### Делегаты
 [TODO](https://kotlinlang.org/docs/delegated-properties.html)
+
+### Функции
+
+##### Trailing lambda
+Если последний аргумент функции является функцией, 
+то ее можно вынести за скобки, это называется `trailing lambda`.
+
+```kotlin
+fun greeting(userId: Int, message: () -> Unit) = Unit
+
+// Используем
+greeting(2048) {
+    // Мы внутри замыкающей лямбды (trailing lambda)
+    println("Hello!") 
+}
+```
+
+##### Infix notation
+```kotlin
+public infix fun <A, B> A.to(that: B): Pair<A, B> = Pair(this, that)
+
+// mapOf в данном случае принимает vararg pairs: Pair<K, V>
+val map = mapOf(
+    "key1" to "value1",
+    "key2" to "value2"
+)
+```
