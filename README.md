@@ -8,4 +8,5 @@
 - [Jetpack Compose](./compose/README.md)
 - [Архитектура](./architecture/README.md)
 - [Собесы](./interview/README.md)
-- [Безопасность](./security/README.md) 
+- [Безопасность](./security/README.md)
+- [Алгосы](./algorithm/README.md)
