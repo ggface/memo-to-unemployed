@@ -145,6 +145,11 @@ Compile-time константы встраиваются (инлайнятся) 
 
 ### Generics
 
+TODO 
+- [Подробно о PECS](https://habr.com/ru/articles/559268/)
+- [Пришел, увидел, обобщил: погружаемся в Java Generics](https://habr.com/ru/companies/sberbank/articles/416413/)
+
+
 Ковариантность (producer) 
 
 ```kotlin
