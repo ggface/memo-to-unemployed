@@ -19,7 +19,7 @@ class Product {
         
         private const val LOG_TAG = "sys_product"
         
-        fun create() : Product = TODO()
+        fun create() : Product = Product()
     }
 }
 
@@ -27,13 +27,13 @@ class Product {
 class MouseAdapter(logTag: String)
 
 val listener = object : MouseAdapter("sys_click") {
-    override fun mouseClicked(e: MouseEvent) = TODO()
-    override fun mouseEntered(e: MouseEvent) = TODO()
+    override fun mouseClicked(e: MouseEvent) = Unit
+    override fun mouseEntered(e: MouseEvent) = Unit
 }
 
 // Анонимный объект (Object expressions)
 fun foo() {
-    val preferences: Any = object {
+    val preferences = object {
         // Можем указать public, protected, internal - разницы как я понял нет
         val theme = "Dark"
     }

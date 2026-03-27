@@ -1,13 +1,22 @@
 # Kotlin
 
-## Темы
-
+### Отдельные Темы
 - [object и companion object](kotlin-object.md)
 - [data classes](data-class.md)
 
-### База
+### База внутри
+- [Properties](#properties)
+- [Backing fields](#backing-fields)
+- [Backing properties](#backing-properties)
+- [Константы](#compile-time-constants)
 
-#### Properties
+### Темы внутри
+- [Generics](#generics)
+- [Деструктуризация](#деструктуризация)
+- [Any, Nothing, Unit](#any-nothing-unit)
+- [Делегаты](#делегаты)
+
+### Properties
 Переменные `val/val` называем `properties`, они же _свойства_. 
 Для таких полей автоматом генерятся `accessors` - это геттер и для `var` сеттер.
 
@@ -64,7 +73,7 @@ class Service {
 }
 ```
 
-#### Backing fields
+### Backing fields
 В kotlin проперти хранят значение в памяти используя `backing fields`. 
 
 Объявлять их ручками нельзя. 
@@ -90,7 +99,7 @@ class Scoreboard {
 }
 ```
 
-#### Backing properties
+### Backing properties
 Бывает мы хотим, чтобы свойство было доступно только для чтения вне класса, 
 но при этом у нас должен быть способ напрямую изменять свойство.
 
@@ -119,6 +128,18 @@ class Temperature {
 ```
 
 [нейминг с _ легален](https://kotlinlang.org/docs/coding-conventions.html#names-for-backing-properties)
+
+### Compile-time constants
+Если значение рид онли проперти известно на этапе компиляции стоит исп модификатор const.
+
+Compile-time константы встраиваются (инлайнятся) во время компиляции. 
+
+Доступ к ним более эффективный так как не генерится геттер. Однако у них есть `backing field` с которым можно взаимодействовать через рефлексию 
+
+Есть требования:
+- Должны быть объявлены как top-level property, или как член класса (member) в object declaration или в companion object.
+- Должны быть инициализированны примитивным типом (numbers, characters, booleans) или стрингой. Беззнаковые целые как UInt тоже можно.
+- Не может иметь кастомный геттер
 
 ### Generics
 
@@ -154,3 +175,25 @@ public inline operator fun <K, V> Map.Entry<K, V>.component2(): V = value
 а так же деклирировать как функции-расширения в других файлах/классах;
 
 Для data-классов функции `componentN()` генерятся автоматически
+
+Если в супер классе data класса объявить функцию `componentN()`, 
+то компилятор будет ругаться на data-класс.
+`open class` + `override operator fun` не помогут.
+```kotlin
+open class SimpleClass {
+    operator fun component1(): String = ""
+}
+
+// ругается 
+// Function 'fun component1(): String' generated for 
+// the data class conflicts with the supertype member 'fun component1(): String' defined in '/SimpleClass'.
+data class SimpleDataClass(
+    val s: String
+) : SimpleClass()
+```
+
+### Any Nothing Unit
+TODO
+
+### Делегаты
+[TODO](https://kotlinlang.org/docs/delegated-properties.html)
