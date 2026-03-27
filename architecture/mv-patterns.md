@@ -1,5 +1,10 @@
 # MV* паттерны
 
+TODO
+
+- [Паттерны для новичков: MVC vs MVP vs MVVM](https://habr.com/ru/articles/215605/)
+
+
 ### MVC (Model–View–Controller)
 // TODO
 
