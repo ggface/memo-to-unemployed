@@ -3,6 +3,7 @@
 ### Отдельные Темы
 - [object и companion object](kotlin-object.md)
 - [data classes](data-class.md)
+- [Исключения и паники](error.md)
 
 ### База внутри
 - [Properties](#properties)
