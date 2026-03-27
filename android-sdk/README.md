@@ -12,6 +12,9 @@
 
 - [The manifest file](#manifest)
 - [Fragment](#fragment)
+- [Bundle]()
+- [Intent]()
+- [Сохранение состояния]()
 
 ## Что исследовать
 один и тот же объект для парселабла или сериализации при передаче через интент
@@ -37,6 +40,8 @@ https://developer.android.com/reference/androidx/recyclerview/widget/DiffUtil.Ca
 // TODO вызов методов ЖЦ при переходе с экрана на экран + сделать визуал в excalidraw
 
 (https://github.com/fylmr/android-interview?tab=readme-ov-file#activity)
+
+// TODO поворот экрана
 
 ### Service
 
