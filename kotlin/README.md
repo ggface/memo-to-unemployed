@@ -16,6 +16,8 @@
 - [Деструктуризация](#деструктуризация)
 - [Any, Nothing, Unit](#any-nothing-unit)
 - [Делегаты](#делегаты)
+- [Функции](#функции)
+- [KClass](#функции)
 
 ### Properties
 Переменные `val/val` называем `properties`, они же _свойства_. 
@@ -231,3 +233,45 @@ val map = mapOf(
     "key2" to "value2"
 )
 ```
+
+### Функции
+`KClass` — это класс из Kotlin Reflection API, который представляет метаинформацию о Kotlin-классе во время выполнения. Если говорить просто — это Kotlin-версия `java.lang.Class`.
+```kotlin
+// Получаем KClass из Kotlin класса
+val kClass = MyClass::class
+
+// Получаем KClass из Java класс
+val kClass = javaClass.kotlin
+```
+
+🔹 Что можно делать через KClass?
+1️⃣ Получать имя
+```kotlin
+User::class.simpleName
+```
+2️⃣ Получать конструкторы
+```kotlin
+User::class.constructors
+```
+3️⃣ Создавать экземпляр (если есть пустой конструктор)
+```kotlin
+val instance = User::class.createInstance()
+```
+
+Требует dependency:
+```kotlin
+implementation("org.jetbrains.kotlin:kotlin-reflect")
+```
+🔹 Почему в Kotlin сделали отдельный KClass?
+
+Потому что:
+
+Java reflection не знает ничего о:
+- nullability
+- data class
+- sealed class
+- object
+- companion object
+- inline class
+
+Kotlin reflection хранит Kotlin-метаданные.
