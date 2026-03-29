@@ -146,22 +146,55 @@ Compile-time константы встраиваются (инлайнятся) 
 - Не может иметь кастомный геттер
 
 ### Generics
+💡 Самый простой способ понять
 
-TODO 
-- [Подробно о PECS](https://habr.com/ru/articles/559268/)
-- [Пришел, увидел, обобщил: погружаемся в Java Generics](https://habr.com/ru/companies/sberbank/articles/416413/)
+Задай себе вопрос:
 
+Объект возвращает T? → out
 
-Ковариантность (producer) 
+Объект принимает T? → in
 
+Делает и то и другое? → инвариантность
+
+[Подробно о PECS](https://habr.com/ru/articles/559268/) (Producer Extends Consumer Super — из Java)
+
+##### Инвариантность (по умолчанию)
 ```kotlin
-val b: Box<Animal> = Box<Cat>(Cat())
+class Box<T>(val value: T)
+
+val catBox: Box<Cat> = Box(Cat())
+
+val animalBox: Box<Animal> = catBox // ❌ Ошибка
 ```
 
-Контрвариантность (consumer)
+##### Ковариантность (Producer → out) 
+Тип только производит значение. Мы только читаем `T`, но не можем туда ничего записать.
 
 ```kotlin
-val p: Processor<Int> = Processor<Number>()
+class Cage<out T : Animal>(private val animal: T) {
+    fun get(): T = animal
+}
+class Cage<out T>(var animal: T) // ❌ Ошибка
+
+val catCage: Cage<Cat> = Cage(Cat())
+val animalCage: Cage<Animal> = catCage // ✅ Работает
+```
+
+##### Контрвариантность (Consumer → in)
+Тип только потребляет значения.
+
+```kotlin
+interface AnimalPrinter<in T> {
+    fun print(animal: T)
+}
+
+val animalPrinter: AnimalPrinter<Animal> = object : AnimalPrinter<Animal> {
+    override fun print(animal: Animal) {
+        println(animal)
+    }
+}
+
+val catPrinter: AnimalPrinter<Cat> = animalPrinter // ✅ Работает
 ```
 
 ### Деструктуризация
