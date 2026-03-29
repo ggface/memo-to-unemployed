@@ -1,5 +1,9 @@
 # Compose
 
+- [Composable](#composable)
+- [Compose Runtime](#compose-runtime)
+- [Side Effects](#side-effects)
+
 ## Что исследовать
 interface Composition
 
@@ -38,6 +42,36 @@ public fun <T> mutableStateListOf(): SnapshotStateList<T> = SnapshotStateList<T>
 public fun <K, V> mutableStateMapOf(): SnapshotStateMap<K, V> = SnapshotStateMap<K, V>()
 
 public fun <T> mutableStateSetOf(): SnapshotStateSet<T> = SnapshotStateSet<T>()
+
+## Composable
+
+Что важно понимать:
+
+Это не просто аннотация, а вход в Compose runtime.
+
+Composable-функция:
+- может вызываться только из другой composable
+- не должна иметь сайд-эффектов
+- должна быть [идемпотентной](../glossary/README.md#idempotent-идемпотентный)
+
+Важно знать:
+- recomposition происходит при изменении State
+- composable должна быть максимально "pure"
+
+## Compose Runtime
+библиотека `androidx.compose.runtime`
+
+Это не UI toolkit.
+Это реактивный движок, который:
+
+- хранит состояние
+- управляет recomposition
+- отслеживает чтение state
+- управляет coroutine scope
+- управляет эффектами
+- управляет памятью composable
+
+UI (Material, Layout и т.д.) — это уже поверх runtime.
 
 ## Side Effects
 [Документация en](https://developer.android.com/develop/ui/compose/side-effects)

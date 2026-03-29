@@ -10,3 +10,4 @@
 - [Собесы](./interview/README.md)
 - [Безопасность](./security/README.md)
 - [Алгосы](./algorithm/README.md)
+- [Словарь](./glossary/README.md)
