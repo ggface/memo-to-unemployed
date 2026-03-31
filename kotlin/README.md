@@ -308,3 +308,36 @@ Java reflection не знает ничего о:
 - inline class
 
 Kotlin reflection хранит Kotlin-метаданные.
+
+### Scope функции (Функции области видимости)
+Нужны для выполнения блока кода для объекта, на котором вызывается функция.
+
+```
+        this        it
+self    apply       also
+result  run / with  let
+```
+- apply: донастройка объекта, замена паттерна Builder
+```kotlin
+Intent(context, AccountDetailsActivity::class.java).apply { // this: Intent
+    putExtra(EXTRA_ACCOUNT_ID, accountId)
+    // Возвращаем this (Intent)
+}
+```
+- also: сайд эффект для объекта
+```kotlin
+private val initialId: Int = savedStateHandle[KEY].also { // it: Int
+    Timber.tag(LOG_TAG).v("initialId is $it")
+    // Возвращаем this (Int)
+}
+```
+- with: помогает для вызова функций в контексте объекта, над которым вызвали
+```kotlin
+val density = LocalDensity.current
+val cornerRadiusDp: Dp = with(density) { // this: Density
+    outerFloat.toDp() // Вызываем Float.toDp() из Density
+    // Возвращаем result (Dp)
+}
+```
+
+
