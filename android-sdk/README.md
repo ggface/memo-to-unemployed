@@ -3,6 +3,7 @@
 ## Снаружи
 - [View](./view.md)
 - [Parcelable](./parcelable.md)
+- [Рендеринг](./rendering.md)
 
 ## Внутри
 - [Activities](#activity)
