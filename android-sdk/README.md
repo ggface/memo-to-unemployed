@@ -30,7 +30,7 @@
 
 жц фрагментов, разница иинициализации
 
-можно ли поменять размер вью без layoutparams черех width и heigth
+можно ли поменять размер вью без layoutparams через width и heigth
 
 RecyclerView ListView ViewHolders и как сделать эффективные списки
 
@@ -65,19 +65,41 @@ https://developer.android.com/reference/androidx/recyclerview/widget/DiffUtil.Ca
 - [Inside Android: Context, Binder IPC, Zygote - Ioannis Anifantakis | droidcon Berlin 2025](https://youtu.be/AXUu-_fEyD0?si=Z4xQKhbKJTaFflsD)
 
 
-#### 1. The Launcher's Role
-   Your journey begins with the Launcher—the home screen app. When you tap an app icon:
+#### Launcher
+- Launcher отправляет Intent (с ACTION_MAIN, CATEGORY_LAUNCHER) в AMS используя Binder IPC (Inter-Process Communication).
 
-- Touch Processing: The Android input framework identifies the touch event and the targeted icon.
-- Intent Creation: The Launcher generates an Intent—a messaging object—specifying the app to launch.
-- System Communication: The Intent is sent to the Activity Manager Service (AMS) via Binder Inter-Process Communication (IPC).
+#### ActivityManagerService
 
-#### 2. Activity Manager Service (AMS): The Orchestrator
-   The AMS, a core Android system component, now takes control:
+AMS запрашивает у PMS (PackageManagerService) информацию о приложении
+(манифест, точка входа — Activity с фильтром CATEGORY_LAUNCHER).
 
-- App Status Check: It verifies if the app is already running. If so, it brings it to the foreground.
-- Process Existence: Otherwise, it checks if the app's process exists.
-- Process Creation: If not, AMS instructs Zygote to create a new process for the app.
+Если процесс приложения уже существует: 
+- AMS находит его запись (ProcessRecord)
+- выводит его root Activity в foreground (Resume) 
+- передает сохраненный Bundle (если есть) в onCreate() / onRestoreInstanceState() 
+
+Если процесса нет:
+- Fork от Zygote: AMS отправляет запрос Zygote используя socket message на создание нового процесса (fork()).
+- Инициализация процесса: В новом процессе запускается ZygoteInit.main(), инициализирующая среду выполнения (ART/Dalvik).
+- Создание главного потока: Создается main (UI) thread.
+- Запуск ActivityThread: Вызывается main() метод ActivityThread — «сердце» приложения.
+- Привязка к AMS: ActivityThread.attach() связывает процесс приложения с AMS через Binder, регистрируя новый ApplicationThread (Binder‑интерфейс приложения для AMS).
+- Инициализация Looper/Handler: Создаются Looper (обработка очереди сообщений) и Handler (обработка сообщений, вызов методов жизненного цикла) для главного потока.
+- Создание Application: AMS инициирует создание объекта Application (вызов onCreate()).
+- Создание Launch Activity:
+  - ActivityTaskManager (часть AMS) получает команду создать Activity.
+  - ActivityStarter обрабатывает запрос.
+  - AMS отправляет транзакцию приложению (через ApplicationThread) на создание Activity.
+- Обработка в ActivityThread: Полученная транзакция (ClientTransaction) обрабатывается. Через Instrumentation создается экземпляр Activity.
+- Жизненный цикл Activity: Вызываются onCreate() → onStart() → onResume()(передача сохраненного Bundle в onCreate() при восстановлении). UI отображается пользователю.
+
+
+- App Status Check: 
+- It verifies if the app is already running. If so, it brings it to the foreground.
+- Process Existence: 
+- Otherwise, it checks if the app's process exists.
+- Process Creation: 
+- If not, AMS instructs Zygote to create a new process for the app.
 
 #### 3. Zygote: The Efficient Process Factory
    Zygote, a crucial system process, optimizes app launching by:
