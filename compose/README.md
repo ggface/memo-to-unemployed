@@ -112,7 +112,7 @@ UI (Material, Layout и т.д.) — это уже поверх runtime.
 ```
 
 ### [SideEffect](https://developer.android.com/develop/ui/compose/side-effects#sideeffect-publish)
-Что это: выполняется после успешной композиции, на главном потоке.
+Что это: выполняется после успешной композиции (commit фазы), на главном потоке.
 
 Для чего:
 
