@@ -2,6 +2,14 @@
 
 Плейлист с видосами: https://www.youtube.com/playlist?list=PLp_FpnyDwvuA9vzOImAAn4COaa9yK71hd
 
+Мини-шпаргалка:
+- S — одна ответственность
+- O — расширяем без изменения
+- L — подставляем без поломки
+- I — маленькие интерфейсы
+- D — зависим от абстракций
+
+Примеры кода:
 - [Single Responsibility Principle (SRP)](#single-responsibility-principle-srp)
 - [Open/Closed Principle (OCP)](#openclosed-principle-ocp)
 - [Liskov Substitution Principle (LSP)](#liskov-substitution-principle-lsp)
