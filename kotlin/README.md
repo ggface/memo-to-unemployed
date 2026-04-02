@@ -17,7 +17,8 @@
 - [Any, Nothing, Unit](#any-nothing-unit)
 - [Делегаты](#делегаты)
 - [Функции](#функции)
-- [KClass](#функции)
+- [KClass](#kclass)
+- [Scope function (Функции области видимости)](#scope-функции-функции-области-видимости)
 
 ### Properties
 Переменные `val/val` называем `properties`, они же _свойства_. 
@@ -267,7 +268,7 @@ val map = mapOf(
 )
 ```
 
-### Функции
+### KClass
 `KClass` — это класс из Kotlin Reflection API, который представляет метаинформацию о Kotlin-классе во время выполнения. Если говорить просто — это Kotlin-версия `java.lang.Class`.
 ```kotlin
 // Получаем KClass из Kotlin класса
@@ -310,15 +311,39 @@ Java reflection не знает ничего о:
 Kotlin reflection хранит Kotlin-метаданные.
 
 ### Scope функции (Функции области видимости)
-Нужны для выполнения блока кода для объекта, на котором вызывается функция.
+Нужны для выполнения блока кода для `context object`, на котором вызывается функция.
 
 ```
         this        it
 self    apply       also
 result  run / with  let
 ```
+
+#### let: преобразования и null-check
+
+- Объект контекста доступен как аргумент (it).
+- Возвращает результат лямбды.
+
+```kotlin
+inline fun <T, R> T.let(block: (T) -> R): R {
+    return block(this)
+}
+
+val result = "hello".let { it.uppercase() }
+
+val name: String? = getName()
+name?.let {
+    println(it.length)
+}
+```
+
 - apply: донастройка объекта, замена паттерна Builder
 ```kotlin
+inline fun <T> T.apply(block: T.() -> Unit): T {
+    block()
+    return this
+}
+
 Intent(context, AccountDetailsActivity::class.java).apply { // this: Intent
     putExtra(EXTRA_ACCOUNT_ID, accountId)
     // Возвращаем this (Intent)
@@ -326,6 +351,11 @@ Intent(context, AccountDetailsActivity::class.java).apply { // this: Intent
 ```
 - also: сайд эффект для объекта
 ```kotlin
+inline fun <T> T.also(block: (T) -> Unit): T {
+    block(this)
+    return this
+}
+
 private val initialId: Int = savedStateHandle[KEY].also { // it: Int
     Timber.tag(LOG_TAG).v("initialId is $it")
     // Возвращаем this (Int)
@@ -333,6 +363,10 @@ private val initialId: Int = savedStateHandle[KEY].also { // it: Int
 ```
 - with: помогает для вызова функций в контексте объекта, над которым вызвали
 ```kotlin
+inline fun <T, R> with(receiver: T, block: T.() -> R): R {
+    return receiver.block()
+}
+
 val density = LocalDensity.current
 val cornerRadiusDp: Dp = with(density) { // this: Density
     outerFloat.toDp() // Вызываем Float.toDp() из Density
