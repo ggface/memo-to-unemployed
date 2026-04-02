@@ -10,4 +10,5 @@
 - [Собесы](./interview/README.md)
 - [Безопасность](./security/README.md)
 - [Алгосы](./algorithm/README.md)
+- [Сеть](./network/README.md)
 - [Словарь](./glossary/README.md)
