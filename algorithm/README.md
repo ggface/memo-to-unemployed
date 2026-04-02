@@ -1,5 +1,8 @@
 # Алгосы
 
+## Сложность
+
+## Задачки
 - [Two Sum](#two-sum) https://leetcode.com/problems/two-sum/description/
 
 #### Two Sum
