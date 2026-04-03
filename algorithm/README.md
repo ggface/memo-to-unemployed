@@ -1,6 +1,7 @@
 # Алгосы
 
 ## Сложность
+- [Сложность, коллекции, поиск](../java-core/collections.md)
 
 ## Задачки
 - [Two Sum](#two-sum) https://leetcode.com/problems/two-sum/description/
