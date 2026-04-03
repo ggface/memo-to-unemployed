@@ -313,6 +313,13 @@ Kotlin reflection хранит Kotlin-метаданные.
 ### Scope функции (Функции области видимости)
 Нужны для выполнения блока кода для `context object`, на котором вызывается функция.
 
+Все scope функции файла StandardKt:
+`let`, `with`, `run`, `apply`, `also` и так же в оф доке упоминаются `takeIf` and `takeUnless`.
+
+Доп инфо:
+`(T) -> R` — обычная функция с аргументом
+`T.() -> R` — функциональный тип с ресивером (`T` будет доступен через `this`)
+
 ```
         this        it
 self    apply       also
@@ -337,31 +344,11 @@ name?.let {
 }
 ```
 
-- apply: донастройка объекта, замена паттерна Builder
-```kotlin
-inline fun <T> T.apply(block: T.() -> Unit): T {
-    block()
-    return this
-}
+#### with: помогает для вызова функций в контексте объекта, над которым вызвали
 
-Intent(context, AccountDetailsActivity::class.java).apply { // this: Intent
-    putExtra(EXTRA_ACCOUNT_ID, accountId)
-    // Возвращаем this (Intent)
-}
-```
-- also: сайд эффект для объекта
-```kotlin
-inline fun <T> T.also(block: (T) -> Unit): T {
-    block(this)
-    return this
-}
+- Объект контекста доступен как ресивер (this).
+- Возвращает результат лямбды.
 
-private val initialId: Int = savedStateHandle[KEY].also { // it: Int
-    Timber.tag(LOG_TAG).v("initialId is $it")
-    // Возвращаем this (Int)
-}
-```
-- with: помогает для вызова функций в контексте объекта, над которым вызвали
 ```kotlin
 inline fun <T, R> with(receiver: T, block: T.() -> R): R {
     return receiver.block()
@@ -374,4 +361,79 @@ val cornerRadiusDp: Dp = with(density) { // this: Density
 }
 ```
 
+#### run: 
+
+- Объект контекста доступен как ресивер (this).
+- Возвращает результат лямбды.
+- Имеет аналог без функции-расширения 
+
+```kotlin
+inline fun <T, R> T.run(block: T.() -> R): R {
+    return block()
+}
+
+val result = "hello".run { // Здесь this = "hello"
+    uppercase() // Можно обращаться без this
+}
+```
+
+#### apply: донастройка объекта, замена паттерна Builder
+
+- Объект контекста доступен как ресивер (this).
+- Возвращает объект контекста.
+
+```kotlin
+inline fun <T> T.apply(block: T.() -> Unit): T {
+    block()
+    return this
+}
+
+Intent(context, AccountDetailsActivity::class.java).apply { // this: Intent
+    putExtra(EXTRA_ACCOUNT_ID, accountId)
+    // Возвращаем this (Intent)
+}
+```
+#### also: сайд эффект для объекта
+
+- Объект контекста доступен как аргумент (it).
+- Возвращает объект контекста.
+
+```kotlin
+inline fun <T> T.also(block: (T) -> Unit): T {
+    block(this)
+    return this
+}
+
+private val initialId: Int = savedStateHandle[KEY].also { // it: Int
+    Timber.tag(LOG_TAG).v("initialId is $it")
+    // Возвращаем this (Int)
+}
+```
+
+#### `takeIf` и `takeUnless`
+
+- Объект контекста доступен как аргумент (it).
+- takeIf возвращает объект контекста если условие true, иначе null
+- takeUnless возвращает объект контекста если условие false, иначе null
+
+```kotlin
+inline fun <T> T.takeIf(predicate: (T) -> Boolean): T? {
+    return if (predicate(this)) this else null
+}
+
+inline fun <T> T.takeUnless(predicate: (T) -> Boolean): T? {
+    return if (!predicate(this)) this else null
+}
+
+/**
+ * 👉 если isValid == true → вернётся user
+ * 👉 иначе → null
+ */
+val validUser = user.takeIf { it.isValid() }
+
+/**
+ * 👉 если isBanned == false → вернётся user
+ */
+val validUser = user.takeUnless { it.isBanned() }
+```
 
