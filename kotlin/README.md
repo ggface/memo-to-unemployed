@@ -4,6 +4,7 @@
 - [object и companion object](kotlin-object.md)
 - [data classes](data-class.md)
 - [Исключения и паники](error.md)
+- [Коллекции](collections.md)
 
 ### База внутри
 - [Properties](#properties)
