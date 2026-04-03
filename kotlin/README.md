@@ -236,7 +236,63 @@ data class SimpleDataClass(
 ```
 
 ### Any Nothing Unit
-TODO
+
+#### Any
+Any это базовый тип всех не-nullable типов в Kotlin.
+
+`Any` и `Any?` в JVM мапится в `java.lang.Object`
+
+Имеет методы:
+- equals() // принципы те же что и для [Java Object.equals()](../java-core/object.md#принципы-equals)
+- hashCode()
+- toString()
+
+В дженериках `fun <T> foo(x: T) { }` T будет `T : Any?`, если хочется убрать optional, нужно использовать `fun <T : Any> foo(x: T)`.
+
+#### Nothing
+Nothing — тип, который никогда не имеет инстанса.
+
+```kotlin
+inline fun TODO(): Nothing = throw NotImplementedError()
+```
+
+Но так как Nothing это подтип любого типа, мы можем иметь и такую сигнатуру:
+```kotlin
+inline fun TODO(): String = throw NotImplementedError()
+
+val x: String = throw Exception()
+
+fun loop(): Nothing { while (true) {} }
+
+val result: String = when (value) {
+    1 -> "One"
+    2 -> "Two"
+    else -> throw IllegalArgumentException("Invalid")  // Тип `throw` — Nothing
+} 
+```
+
+Однако мы можем объявить `val nothingNull: Nothing? = null`, в таком случае пропертя может иметь только одно значение - null.
+
+В JVM `Nothing?` мапится в `ava.lang.Void`, а для `Nothing` мапинга нет.
+
+Если интересная деталь:
+```kotlin
+// Корректно, хотя emptyList() это List<Nothing>
+val myList: List<String> = emptyList()
+```
+Это работает благодаря [ковариантности](#generics).
+
+#### Unit
+Unit это singleton объект. В байткоде создаётся `Unit.INSTANCE`.
+
+Unit описывает отсутствие значимого результата, может принимать только значение `Unit`.
+
+```kotlin
+val unitValue: Unit = Unit  // Корректно
+val list: List<Unit> = listOf(Unit) // Корректно
+```
+
+В JVM мапится в `void` если возвращается из функции и в `kotlin.Unit` если используется как тип.
 
 ### Делегаты
 [TODO](https://kotlinlang.org/docs/delegated-properties.html)
