@@ -16,7 +16,7 @@
 - [Generics](#generics)
 - [Деструктуризация](#деструктуризация)
 - [Any, Nothing, Unit](#any-nothing-unit)
-- [Делегаты](#делегаты)
+- [Делегирование](#делегирование)
 - [Функции](#функции)
 - [KClass](#kclass)
 - [Scope function (Функции области видимости)](#scope-функции-функции-области-видимости)
@@ -295,8 +295,45 @@ val list: List<Unit> = listOf(Unit) // Корректно
 
 В JVM мапится в `void` если возвращается из функции и в `kotlin.Unit` если используется как тип.
 
-### Делегаты
-[TODO](https://kotlinlang.org/docs/delegated-properties.html)
+### Делегирование
+Delegation (делегирование) — это паттерн, при котором объект передаёт часть своей ответственности другому объекту.
+
+Есть два типа делегатов:
+- Class delegation
+- Property delegation
+
+#### Class delegation:
+Kotlin позволяет делегировать реализацию интерфейса другому объекту через ключевое слово by. Это альтернатива наследованию без необходимости вручную проксировать методы.
+
+Пример:
+```kotlin
+interface Logger {
+    fun log(message: String)
+}
+
+class ConsoleLogger : Logger {
+    override fun log(message: String) {
+        println("Console: $message")
+    }
+}
+
+// Добавляем поведение, не переписывая Logger
+class TimestampLogger(
+    private val logger: Logger
+) : Logger by logger {
+
+    override fun log(message: String) {
+        logger.log("${System.currentTimeMillis()}: $message")
+    }
+}
+```
+
+👉 Что важно подчеркнуть:
+- мы расширили поведение, не меняя ConsoleLogger
+- это composition over inheritance
+- не нужно писать прокси-методы
+
+#### Property delegation
 
 ### Функции
 
