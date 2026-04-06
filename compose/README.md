@@ -118,6 +118,7 @@ UI (Material, Layout и т.д.) — это уже поверх runtime.
 
 - синхронизировать состояние Compose со внешним миром (ViewModel, логгеры, системные API)
 - неасинхронные действия
+- можно для отладки логировать состояние и детектить избыточные рекомпозиции для оптимизации 
 
 ### [rememberCoroutineScope](https://developer.android.com/develop/ui/compose/side-effects#remembercoroutinescope)
 Что это: даёт coroutine scope, привязанный к жизненному циклу current composition (не пересоздаётся на recomposition).
