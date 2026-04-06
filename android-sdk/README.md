@@ -6,6 +6,9 @@
 - [Рендеринг](./rendering.md)
 
 ## Внутри
+- [Context](#context)
+- [Application](#application)
+
 - [Activities](#activity)
 - [Services](#service)
 - [Broadcast receivers](#broadcastreceiver)
@@ -38,6 +41,171 @@ https://developer.android.com/reference/androidx/recyclerview/widget/DiffUtil.Ca
 
 Коллекции android sdk
 
+Материалы:
+- [Digging Into Android System Services](https://www.youtube.com/watch?v=M6extgmQQNw)
+- [Context in Android - A Deep Dive](https://www.youtube.com/watch?v=S22NlX4iXJU)
+
+Android sandbox — это механизм изоляции приложений, при котором каждое приложение работает в своём процессе и под своим UID, не имея прямого доступа к данным и памяти других приложений.
+
+изоляция обеспечивается НЕ Android, а Linux kernel
+Каждое приложение = отдельный Linux user и Отдельный процесс
+
+Есть системный процесс system_server.
+в нём живут реальные сервисы:
+
+- ActivityManagerService
+- WindowManagerService
+- PackageManagerService
+
+некоторые вынесены отдельно: (что бы при падении не порушить всю систему)
+- media server (mediaserver / media.codec)
+- cameraserver
+- bluetooth
+
+
+ServiceManager
+
+ServiceManager — это центральный реестр Binder-сервисов в Android, 
+который позволяет находить системные сервисы по имени.
+Запускается при старте системы
+МП не знает где находится нужный сервис, за это отвечает ServiceManager.
+
+порядок примерно такой:
+1. kernel
+2. init
+3. servicemanager
+4. zygote
+5. system_server
+
+Он работает в отдельном процессе `servicemanager` (контексте binder driver), 
+создаётся при старте системы и участвует в IPC как "directory service" 
+для получения binder-объектов.
+
+Сервисы регистрируются в ServiceManager под стринговым именем для поиска сервиса.
+Когда стартует System Server при загрузке девайса, он создает экземпляры своих сервисов;
+Так же он создает Stub (заглушки) для всех сервисов и передает из в ServiceManager 
+где заглушки живут в виде IBinder.
+
+приложения потом смогут так получить сервис (код из SystemServiceRegistry)
+```java
+IBinder b = ServiceManager.getServiceOrThrow(Context.ALARM_SERVICE);
+IAlarmManager service = IAlarmManager.Stub.asInterface(b);
+return new AlarmManager(service, ctx);
+```
+
+все зареганный сервисы можно посмотреть с помощью команды
+```shell
+  adb shell service list
+```
+
+вот пример:
+- SurfaceFlinger: [android.ui.ISurfaceComposer]
+- activity: [android.app.IActivityManager]
+- activity_task: [android.app.IActivityTaskManager]
+
+
+
+Сервис всегда один, однако в каждом приложении могут быть созданы многие инстансы менеджеров
+Откуда бы мы не подучали менеджер, менеджер есть для каждого контекста, 
+но под капотом все менеджеры используют один и тот же прокси (напр IAlarmManager)
+
+Компоненты андроид либо сами являются контекстом либо имеют доступ к контексу
+Context->ContextImpl->SystemServiceRegistry
+
+Когда процесс МП запускается, список сервисов статически создается внутри реестра, 
+но сами объекты менеджеров не создаются. 
+Создается фабричный метод для создания инстанса, который привязан к имени сервиса,
+например `Context.ACTIVITY_SERVICE`, по которому мы и запрашиваем менеджер (сервис)
+
+В каждом контексте есть свой SystemServiceRegistry, то есть в каждом активити или сервисе.
+
+так как сервис и наше МП работают в разных процессах, нужен способ общения между ними и это Binder IPC.
+Для упрощения общения приложения и сервиса генерируются Proxy (сторона МП) и Stub (сторона сервиса)
+Предоставляют более дружественный API, нежели Binder
+
+На основе одного интерфейса при сборке генерируются эти два компонента (Proxy+Stub).
+Генерятся они с помощью AIDL (Android Interface Definition Language)
+
+Разбор на примере AlarmManager:
+- Класс AlarmManager содержит поле типа IAlarmManager который передается через конструктор и наш менеджер делегирует ему всю работу проксируя вызовы методов
+- IAlarmManager и есть наш proxy и он работает с Binder
+- IAlarmManager.Stub принимает вызовы от IAlarmManager через Binder
+- AlarmManager так же имеет заглушку для IAlarmListener.Stub который хранится в поле типа WeakHashMap
+
+Через Binder один процесс, например наше МП может отправить объект в другой процесс, например сервис.
+Binder преобразует объект для перемещения между процессами и затем соберет его для получения другим процессом
+Что бы обеспечить согласованность (consistency) Binder удерживает объект сильной ссылкой
+И пока служба имеет доступ к нашему объекту, GC не сможет собрать его.
+По этому не стоит передавать долгоживущие объекты типа контекста в сервис, например как имплементацию слушателя
+Пока GC не очистит ссылку на переданный объект в процессе SystemServices, объект не будет удален.
+Системные службы запускают GC не так уж часто
+Например для работы LocationManager нужен LocationListener и если наша Activity будет его имплементить 
+и мы передадим ссылку на Activity в LocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, <Наша активити>);
+то даже если мы удалим слушатель LocationManager.removeUpdates(<Наша активити>) в Activity.onPause,
+это не значит что наша ссылка на активити будет удалена GC 
+и если мы финишируем нашу активности, то активити может утечь, это легко проверить сделав дамп кучи через профайлер.
+решается передачей простого объекта вместо активити.
+
+
+```java
+registerService(Context.ACTIVITY_SERVICE, ActivityManager.class,
+        new CachedServiceFetcher<ActivityManager>() {
+    @Override
+    public ActivityManager createService(ContextImpl ctx) {
+        return new ActivityManager(ctx.getOuterContext(), ctx.mMainThread.getHandler());
+    }});
+
+registerService(Context.ALARM_SERVICE, AlarmManager.class,
+                new CachedServiceFetcher<AlarmManager>() {
+    @Override
+    public AlarmManager createService(ContextImpl ctx) throws ServiceNotFoundException {
+        IBinder b = ServiceManager.getServiceOrThrow(Context.ALARM_SERVICE);
+        IAlarmManager service = IAlarmManager.Stub.asInterface(b);
+        return new AlarmManager(service, ctx);
+    }});
+```
+
+
+Activity->ContextThemeWrapper->ContextWrapper->Context
+
+Реестр это лениво загружаемый кеш объектов менеджеров
+кеш для каждого контекста а не для приложения, то есть вызовы getSystemService из разных контекстов создают новые экземпляры одного и того же сервиса
+
+context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+### [Context](https://developer.android.com/reference/android/content/Context)
+```java
+public abstract class Context extends Object {}
+```
+Контекст в андроид это по сути ключ к получению доступа к ресурсам приложения
+и взаимодействию с компонентами приложения (activity, service, broadcast receiver, content provider)
+и Intent
+
+Activity Manager Service отвечает за создание контекста в приложениях.
+Мы получаем ContextImpl от системы андроид через AMS с помощью вызова `ContextWrapper.attachBaseContext(Context base)`
+
+
+Context абстрактный класс 
+ContextImpl реализует все абстрактные методы Context
+ContextWrapper наследуется от Context но не реализует его, а использует ContextImpl
+ContextThemeWrapper нужен только для активити, так как другим сущностям не нужна тема (у них нет UI)
+
+Такая иерархия нарушает и SRP и LSP.
+
+ApplicationContext - это глобальный контекст
+context.getApplicationContext()
+activity.getApplication()
+
+BaseContext это исходный ContextImpl
+
+Activity Context ограничен ЖЦ экрана, имеет свою тему
+
+![Иерархия контекстов](images/context-hierarchy.png)
+
+
+### Application
+Application : ContextWrapper : Context
+
 ### Activity
 
 // TODO вызов методов ЖЦ при переходе с экрана на экран + сделать визуал в excalidraw
@@ -45,6 +213,19 @@ https://developer.android.com/reference/androidx/recyclerview/widget/DiffUtil.Ca
 (https://github.com/fylmr/android-interview?tab=readme-ov-file#activity)
 
 // TODO поворот экрана
+
+Метод `onStart()` - активити становится видимой 
+
+Метод `onSaveInstanceState()` вызывается после `onStop()` всегда,
+потому что в будущем activity может быть убита системой,
+например из-за нехватки памяти или приоритета фоновых процессов.
+
+Если вызвать `finish()` в `onCreate()` то `onPause()` и `onStop()` не будут вызваны, вызовет только `onDestroy()`.
+
+#### Переход из A -> B -> click back
+
+![Activity A->B](images/activity-a-b.png)
+
 
 ### Service
 
