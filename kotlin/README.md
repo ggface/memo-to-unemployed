@@ -5,12 +5,14 @@
 - [data classes](data-class.md)
 - [Исключения и паники](error.md)
 - [Коллекции](collections.md)
+- [Строки](strings.md)
 
 ### База внутри
 - [Properties](#properties)
 - [Backing fields](#backing-fields)
 - [Backing properties](#backing-properties)
 - [Константы](#compile-time-constants)
+- [lateinit var](#lateinit), [Lazy](#lazy)
 
 ### Темы внутри
 - [Generics](#generics)
@@ -18,7 +20,7 @@
 - [Any, Nothing, Unit](#any-nothing-unit)
 - [Делегирование](#делегирование)
 - [Функции](#функции)
-- [KClass](#kclass)
+- [KClass etc (Reflection Api)](#kclass)
 - [Scope function (Функции области видимости)](#scope-функции-функции-области-видимости)
 
 ### Properties
@@ -147,6 +149,69 @@ Compile-time константы встраиваются (инлайнятся) 
 - Должны быть инициализированны примитивным типом (numbers, characters, booleans) или стрингой. Беззнаковые целые как UInt тоже можно.
 - Не может иметь кастомный геттер
 
+### Lazy, lateinit
+
+#### lateinit
+`lateinit var any: Any` - это отложенная инициализация var без nullable.
+При обращении до инициализации throw `UninitializedPropertyAccessException`
+- только var
+- только non-null типы
+- не для примитивов (Int, Boolean и т.д.), но String можно
+
+Можно чекать инициализацию
+```kotlin
+lateinit var example: String
+
+fun check(){
+    ::example.isInitialized
+}
+```
+
+В этом примере `::example` это property reference
+Доступен он через Reflection API
+
+```kotlin
+// Из пример выше
+val prop: KMutableProperty1<A, String> = A::example
+val func: KFunction1<A, Unit> = A::check
+```
+
+`KProperty` и `KFunction` — это основные интерфейсы `Kotlin Reflection`,
+которые представляют ссылки на свойства и функции соответственно
+и позволяют получать их метаданные и вызывать их динамически.
+
+Подробнее про [рефлексию](#kclass)
+
+#### Lazy
+Kotlin lazy — это делегат свойства, реализованный через интерфейс Lazy<T>:
+Работает только с `val`
+
+```kotlin
+public actual fun <T> lazy(initializer: () -> T): Lazy<T>
+```
+
+это делегат свойства, реализованный через интерфейс Lazy<T>
+
+```kotlin
+public interface Lazy<out T> {
+    val value: T
+    fun isInitialized(): Boolean
+}
+```
+
+- вычисляется при первом доступе
+- результат кешируется
+
+По умолчанию SYNCHRONIZED (thread safe)
+
+Вариации LazyThreadSafetyMode:
+- SYNCHRONIZED: Только один поток вычисляет значение, остальные ждут
+- NONE: Не синхронизирован, быстрый доступ в single-thread
+- PUBLICATION: может выполниться несколько раз (Несколько потоков могут вычислить значение, берётся первый результат)
+
+SYNCHRONIZED ≠ блокировка на весь класс, 
+используется volatile + synchronized(this) внутри делегата.
+
 ### Generics
 💡 Самый простой способ понять
 
@@ -222,10 +287,10 @@ public inline operator fun <K, V> Map.Entry<K, V>.component2(): V = value
 
 Если в супер классе data класса объявить функцию `componentN()`, 
 то компилятор будет ругаться на data-класс.
-`open class` + `override operator fun` не помогут.
+`open class` + `open operator fun` это исправят.
 ```kotlin
 open class SimpleClass {
-    operator fun component1(): String = ""
+    open operator fun component1(): String = ""
 }
 
 // ругается 
@@ -276,7 +341,7 @@ val result: String = when (value) {
 
 В JVM `Nothing?` мапится в `ava.lang.Void`, а для `Nothing` мапинга нет.
 
-Если интересная деталь:
+Есть интересная деталь:
 ```kotlin
 // Корректно, хотя emptyList() это List<Nothing>
 val myList: List<String> = emptyList()
@@ -363,7 +428,15 @@ val map = mapOf(
 ```
 
 ### KClass
-`KClass` — это класс из Kotlin Reflection API, который представляет метаинформацию о Kotlin-классе во время выполнения. Если говорить просто — это Kotlin-версия `java.lang.Class`.
+`KClass` — это класс из Kotlin Reflection API, который представляет метаинформацию о Kotlin-классе во время выполнения. 
+Если говорить просто — это Kotlin-версия `java.lang.Class`.
+
+Оператор `::` создаёт ссылку на свойство `KProperty`, 
+а не возвращает его значение.
+Свойство `isInitialized` доступно только у этой ссылки, 
+потому что оно относится к метаданным lateinit-переменной, 
+а не к самому значению.
+
 ```kotlin
 // Получаем KClass из Kotlin класса
 val kClass = MyClass::class
@@ -403,6 +476,70 @@ Java reflection не знает ничего о:
 - inline class
 
 Kotlin reflection хранит Kotlin-метаданные.
+
+Так же в Reflection Api есть:
+
+
+`KProperty`: ссылка на свойство (val/var)
+  - `KProperty0` — без receiver
+  - `KProperty1` — с receiver
+  - `KMutableProperty` — для var
+
+Можно получить:
+- prop.name
+- prop.returnType
+- prop.annotations
+
+`KFunction`: ссылка на функцию
+
+Можно получить:
+- fn.name
+- fn.parameters
+- fn.returnType
+
+`KCallable`: общий интерфейс для `KProperty` и `KFunction`
+
+`KType`: описание типа включая generic параметры и nullable.
+
+```kotlin
+val type: KType = typeOf<List<String?>>() // List<String?>
+
+type.classifier         // List::class
+type.arguments          // [String?]
+type.isMarkedNullable   // false
+```
+
+`KParameter`: параметр функции или конструктора
+
+Можно получить:
+- имя
+- тип
+- позиция
+- optional / vararg
+
+Пример с методом
+```kotlin
+fun greet(name: String, age: Int) {
+    println("Hello $name, age $age")
+}
+
+val fn = ::greet
+
+fn.parameters.forEach { param ->
+    println("name=${param.name}, type=${param.type}")
+}
+```
+
+Пример с конструктором
+```kotlin
+class User(val name: String, val age: Int)
+
+val ctor = User::class.constructors.first()
+
+ctor.parameters.forEach {
+    println("name=${it.name}, type=${it.type}")
+}
+```
 
 ### Scope функции (Функции области видимости)
 Нужны для выполнения блока кода для `context object`, на котором вызывается функция.
