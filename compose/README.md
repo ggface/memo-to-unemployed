@@ -1,10 +1,58 @@
 # Compose
 
+Снаружи:
+- [Анимации](animations.md)
+- [Задачки](challenges.md)
+
 - [Composable](#composable)
 - [Compose Runtime](#compose-runtime)
 - [Side Effects](#side-effects)
 
 ## Что исследовать
+CompositionLocal
+Это dependency injection внутри composition.
+
+compositionLocalOf - механизм передачи данных вниз по дереву без явного проброса параметров
+
+Типичные примеры:
+- тема
+- locale
+- зависимости
+
+```kotlin
+val LocalCounter = compositionLocalOf { 0 }
+
+@Composable
+fun Screen() {
+    val count = LocalCounter.current
+    Text("$count")
+}
+```
+
+При изменении:
+👉 пересоберётся только Text
+
+staticCompositionLocalOf -
+val config = LocalConfig.current
+untime НЕ отслеживает это чтение
+
+Если значение изменится:
+
+👉 пересоберётся вся subtree, где он был предоставлен
+
+```kotlin
+val LocalCounter = staticCompositionLocalOf { 0 }
+```
+
+При изменении:
+
+👉 пересоберётся весь subtree
+
+Важно понимать:
+
+current value читается реактивно
+изменение приводит к recomposition дочерних composable
+
 interface Composition
 
 @StateFactoryMarker
@@ -216,3 +264,14 @@ LaunchedEffect(Unit) {
         .collect { viewModel.search(it) }
 }
 ```
+
+### Key
+Это инструкция для runtime что composable блок должен ассоциироваться 
+с этим ключом, а не просто с позицией в коде
+
+```kotlin
+key(id) {
+    // composable
+}
+```
+
