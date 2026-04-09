@@ -12,7 +12,7 @@
 - [Backing fields](#backing-fields)
 - [Backing properties](#backing-properties)
 - [Константы](#compile-time-constants)
-- [lateinit var](#lateinit), [Lazy](#lazy)
+- [lateinit var](#lateinit)
 
 ### Темы внутри
 - [Generics](#generics)
@@ -149,14 +149,14 @@ Compile-time константы встраиваются (инлайнятся) 
 - Должны быть инициализированны примитивным типом (numbers, characters, booleans) или стрингой. Беззнаковые целые как UInt тоже можно.
 - Не может иметь кастомный геттер
 
-### Lazy, lateinit
-
 #### lateinit
 `lateinit var any: Any` - это отложенная инициализация var без nullable.
 При обращении до инициализации throw `UninitializedPropertyAccessException`
 - только var
 - только non-null типы
 - не для примитивов (Int, Boolean и т.д.), но String можно
+
+TODO А можно lateinit inline data class?
 
 Можно чекать инициализацию
 ```kotlin
@@ -182,38 +182,8 @@ val func: KFunction1<A, Unit> = A::check
 
 Подробнее про [рефлексию](#kclass)
 
-#### Lazy
-Kotlin lazy — это делегат свойства, реализованный через интерфейс Lazy<T>:
-Работает только с `val`
-
-```kotlin
-public actual fun <T> lazy(initializer: () -> T): Lazy<T>
-```
-
-это делегат свойства, реализованный через интерфейс Lazy<T>
-
-```kotlin
-public interface Lazy<out T> {
-    val value: T
-    fun isInitialized(): Boolean
-}
-```
-
-- вычисляется при первом доступе
-- результат кешируется
-
-По умолчанию SYNCHRONIZED (thread safe)
-
-Вариации LazyThreadSafetyMode:
-- SYNCHRONIZED: Только один поток вычисляет значение, остальные ждут
-- NONE: Не синхронизирован, быстрый доступ в single-thread
-- PUBLICATION: может выполниться несколько раз (Несколько потоков могут вычислить значение, берётся первый результат)
-
-SYNCHRONIZED ≠ блокировка на весь класс, 
-используется volatile + synchronized(this) внутри делегата.
-
 ### Generics
-💡 Самый простой способ понять
+Самый простой способ понять
 
 Задай себе вопрос:
 
@@ -399,6 +369,150 @@ class TimestampLogger(
 - не нужно писать прокси-методы
 
 #### Property delegation
+Для работы делегатов свойств нужны два метода getValue для val и setValue для var
+
+Можно реализовать как функции в классе, так и extension functions снаружи класса
+
+Еще один способ реализовать делегат свойств это анонимный объект
+используя интерфейсы 
+[ReadOnlyProperty](https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.properties/-read-only-property/) или 
+[ReadWriteProperty](https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.properties/-read-write-property/)
+
+```kotlin
+fun resourceDelegate(
+    resource: Resource = Resource()
+): ReadWriteProperty<Any?, Resource> =
+    object : ReadWriteProperty<Any?, Resource> {
+        var curValue = resource
+        
+        override fun getValue(thisRef: Any?, property: KProperty<*>): Resource = curValue
+        
+        override fun setValue(thisRef: Any?, property: KProperty<*>, value: Resource) {
+            curValue = value
+        }
+    }
+
+val readOnlyResource: Resource by resourceDelegate()  // ReadWriteProperty as val
+var readWriteResource: Resource by resourceDelegate()
+```
+
+И есть способ реализовать делегат через `operator fun provideDelegate`
+[en doc](https://kotlinlang.org/docs/delegated-properties.html#providing-a-delegate)
+
+```kotlin
+import kotlin.reflect.KProperty
+
+class Delegate {
+    operator fun getValue(thisRef: Any?, property: KProperty<*>): String {
+        return "$thisRef, thank you for delegating '${property.name}' to me!"
+    }
+
+    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: String) {
+        println("$value has been assigned to '${property.name}' in $thisRef.")
+    }
+}
+
+class Example {
+    var p: String by Delegate()
+}
+```
+
+Еще можно делегировать property другому property через `::` квалификатор.
+Делегатом может быть свойство нашего класса, другого класса или top-level свойство.
+[подробнее en](https://kotlinlang.org/docs/delegated-properties.html#delegating-to-another-property)
+
+```kotlin
+var newName: Int = 0
+@Deprecated("Use 'newName' instead", ReplaceWith("newName"))
+var oldName: Int by this::newName
+```
+
+Еще можно хранить проперти в Map [en doc](https://kotlinlang.org/docs/delegated-properties.html#storing-properties-in-a-map)
+
+работает с val + Map и с var + MutableMap
+
+```kotlin
+class User(val map: Map<String, Any?>) {
+    val name: String by map
+    val age: Int     by map
+}
+
+fun main() {
+    val user = User(mapOf(
+        "name" to "John Doe",
+        "age"  to 25
+    ))
+
+    println(user.name) // Prints "John Doe"
+    println(user.age)  // Prints 25
+}
+```
+
+Еще можно объявить переменную как delegated properties:
+Переменная memoizedFoo будет вычислена только при первом обращении к ней. 
+Если someCondition не выполняется, переменная вообще не будет вычисляться.
+
+```kotlin
+fun example(computeFoo: () -> Foo) {
+    val memoizedFoo by lazy(computeFoo)
+
+    if (someCondition && memoizedFoo.isValid()) {
+        memoizedFoo.doSomething()
+    }
+}
+```
+
+#### Стандартные делегаты в котлин:
+##### Lazy properties
+Kotlin lazy — это делегат свойства, реализованный через интерфейс Lazy<T>:
+Работает только с `val`
+
+```kotlin
+public actual fun <T> lazy(initializer: () -> T): Lazy<T>
+```
+
+это делегат свойства, реализованный через интерфейс Lazy<T>
+
+```kotlin
+public interface Lazy<out T> {
+    val value: T
+    fun isInitialized(): Boolean
+}
+```
+
+- вычисляется при первом доступе
+- результат кешируется
+
+По умолчанию SYNCHRONIZED (thread safe)
+
+Вариации LazyThreadSafetyMode:
+- SYNCHRONIZED: Только один поток вычисляет значение, остальные ждут
+- NONE: Не синхронизирован, быстрый доступ в single-thread
+- PUBLICATION: может выполниться несколько раз (Несколько потоков могут вычислить значение, берётся первый результат)
+
+SYNCHRONIZED ≠ блокировка на весь класс,
+используется volatile + synchronized(this) внутри делегата.
+
+##### Observable properties
+Вызывает callback после каждого изменения property
+
+```kotlin
+var name: String by Delegates.observable("initial value") {
+    prop, old, new ->
+    // свойство уже изменено
+    println("$old -> $new")
+}
+```
+
+##### Vetoable properties
+Вызывает callback при попытке изменить и дает возможность наложить вето на изменение
+
+```kotlin
+var max: Int by Delegates.vetoable(0) { property, oldValue, newValue ->
+    // вызовется перед присвоением нового значения свойству
+    newValue > oldValue
+}
+```
 
 ### Функции
 
