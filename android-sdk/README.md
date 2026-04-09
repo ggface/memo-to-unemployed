@@ -5,6 +5,7 @@
 - [Parcelable](./parcelable.md)
 - [Рендеринг](./rendering.md)
 - [Android internals](./internal.md)
+- [ViewModel](./viewmodel.md)
 
 ## Компоненты
 - [Activities](#activity)
