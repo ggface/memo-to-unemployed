@@ -1,10 +1,13 @@
 # Алгосы
 
 ## Сложность
+
 - [Сложность, коллекции, поиск](../java-core/collections.md)
 
 ## Задачки
+
 - [Two Sum](#two-sum) https://leetcode.com/problems/two-sum/description/
+- [Реверс односвязного списка](#реверс-односвязного-списка)
 
 #### Two Sum
 
@@ -40,5 +43,21 @@ fun twoSum2(nums: IntArray, target: Int): IntArray {
 
 fun main() {
     twoSum2(intArrayOf(1, 1, 3), 2)
+}
+```
+
+### Реверс односвязного списка
+
+```kotlin
+fun reverseList(head: ListNode?): ListNode? {
+    var prev: ListNode? = null
+    var current = head
+    while (current != null) {
+        val next = current.next
+        current.next = prev
+        prev = current
+        current = next
+    }
+    return prev
 }
 ```
