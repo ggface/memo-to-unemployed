@@ -4,6 +4,7 @@
 - [View](./view.md)
 - [Parcelable](./parcelable.md)
 - [Рендеринг](./rendering.md)
+- [Android internals](./internal.md)
 
 ## Компоненты
 - [Activities](#activity)
@@ -30,7 +31,6 @@
 
 taskAffinity — это строковая метка, по которой Android решает в какой task поместить Activity 
 по умолчанию affinity = имя пакета приложения
-
 
 Launch modes
 
