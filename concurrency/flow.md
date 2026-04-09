@@ -57,7 +57,7 @@ public fun <T> Iterator<T>.asFlow(): Flow<T> = flow {
 ```
 
 ### SharedFlow
-
+мультикаст-поток (много подписчиков получают одни данные).
 
 ```kotlin
 public interface SharedFlow<out T> : Flow<T> {

@@ -1,7 +1,9 @@
 # ⚙️ Concurrency
 
-## 📚 Темы
+### Снаружи
+- [Задачки](challenges.md)
 
+## 📚 Темы
 - [Threads](./threads.md)
 - [Coroutines](./coroutines.md)
 - [Synchronization](./synchronization.md)
