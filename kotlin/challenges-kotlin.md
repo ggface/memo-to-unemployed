@@ -1,6 +1,9 @@
 # Задачки Kotlin
 
-[Задача на конструкторы и init #1](./src/main/kotlin/exercise/exercise-1.kt)
+- [Задача на конструкторы и init #1](#exercise-1) 
+- [Задача на модификаторы доступа #1](#exercise-2)
+
+### Exercise 1
 
 Требуется:
 - Объяснить, как работают первичный и вторичный конструкторы.
@@ -37,3 +40,30 @@ class Student(var name: String) {
 - init блоки видят property только выше себя
 
 [Дополнительно про backing filed](README.md#backing-fields)
+
+[Код](./src/main/kotlin/exercise/exercise-1.kt)
+
+### Exercise 2
+
+```kotlin
+data class Person(val firstName: String, private val secondName: String)
+
+fun Person.fullName() = "${this.firstName} ${this.secondName}"
+
+fun main() {
+    println(Person("John", "Doe").fullName())
+}
+```
+
+- не скомпилируется
+- Extension function не имеет доступа к private property
+- так же не поможет destructuring
+- но можно изменить поле через copy:
+
+```kotlin
+val p1 = Person("John", "Doe")
+val p2 = p1.copy(secondName = "Smith")
+println(p2) // Person(firstName=John, secondName=Smith)
+```
+
+[Код](./src/main/kotlin/exercise/exercise-2.kt)
