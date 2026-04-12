@@ -6,6 +6,7 @@
 - [Рендеринг](./rendering.md)
 - [Android internals](./internal.md)
 - [ViewModel](./viewmodel.md)
+- [PendingIntent](./pending-intent.md)
 
 ## Компоненты
 - [Activities](#activity)
