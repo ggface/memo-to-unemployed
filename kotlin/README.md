@@ -6,6 +6,7 @@
 - [Исключения и паники](error.md)
 - [Коллекции](collections.md)
 - [Строки](strings.md)
+- [Задачки](challenges-kotlin.md)
 
 ### База внутри
 - [Properties](#properties)
@@ -104,6 +105,9 @@ class Scoreboard {
             println("Score updated to $field")
         }
 }
+
+// Здесь будет 
+val isCorrect: Boolean
 ```
 
 ### Backing properties
@@ -115,6 +119,42 @@ class Scoreboard {
 private val _backingProperty = MutableStateFlow("")
 // Public read-only view
 val property : StateFlow<String> = _backingProperty
+```
+
+такой код в Java будет скомпилирован примерно так:
+```java
+public final class YourClass {
+    // private поле
+    private final MutableStateFlow<String> _backingProperty = new MutableStateFlow<>("");
+    // public поле (НО через getter)
+    private final StateFlow<String> property = _backingProperty;
+    // getter для property
+    public final StateFlow<String> getProperty() {
+        return this.property;
+    }
+}
+```
+
+но если мы напишем так:
+```kotlin
+// Backing property
+private val _backingProperty = MutableStateFlow("")
+// Public read-only view
+val property : StateFlow<String> 
+    get() = _backingProperty
+```
+
+такой код в Java будет скомпилирован примерно так:
+
+```java
+public final class YourClass {
+    // backing field есть
+    private final MutableStateFlow<String> _backingProperty = new MutableStateFlow<>("");
+    // getter без поля
+    public final StateFlow<String> getProperty() {
+        return this._backingProperty;
+    }
+}
 ```
 
 Может быть полезен еще и для нескольких публичных пропертей с одним backing property в качестве источника данных
