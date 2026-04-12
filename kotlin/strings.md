@@ -93,8 +93,8 @@ val result = String.format("My name is %s and I am %d", name, age)
 
 Java String.concat()
 
-```java
-String string = "Hello".concat("World"); // "HelloWorld"
+```kotlin
+val string = java.lang.String("Hello").concat("World") // "HelloWorld"
 ```
 
 concatToString() для CharArray или CharSequence
