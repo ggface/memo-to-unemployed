@@ -2,6 +2,7 @@
 
 - [Задача на конструкторы и init #1](#exercise-1) 
 - [Задача на модификаторы доступа #1](#exercise-2)
+- [Задача с делегатом](#exercise-3)
 
 ### Exercise 1
 
@@ -67,3 +68,22 @@ println(p2) // Person(firstName=John, secondName=Smith)
 ```
 
 [Код](./src/main/kotlin/exercise/exercise-2.kt)
+
+### Exercise 3
+
+[Код](./src/main/kotlin/exercise/exercise-3.kt)
+
+Почему не используется Derived.message?
+
+Потому что:
+- print() выполняется в BaseImpl
+- а не в Derived
+- значит this внутри print() = BaseImpl
+
+Что бы изменить поведение:
+```kotlin
+// Класс Derived
+override fun print() {
+    println(message)
+}
+```
