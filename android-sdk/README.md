@@ -102,6 +102,90 @@ FLAG_ACTIVITY_CLEAR_TASK
 
 
 ### Service
+Service — это компонент Android без UI, 
+который выполняет долгие операции в фоне 
+или предоставляет интерфейс для взаимодействия между компонентами / процессами.
+
+📌 Важно:
+- Service работает в main thread по умолчанию
+- Не создаёт отдельный поток → блокирующие операции = ANR
+- Может жить дольше Activity
+
+Типы:
+- Started Service (запущенный)
+- Bound Service (связанный)
+  
+Started Service
+```kotlin
+startService()
+startForegroundService()
+```
+
+📌 Характеристики:
+- работает пока сам не остановится
+- не привязан к клиенту
+- остановка: stopSelf() или stopService()
+
+📌 Используется для:
+- загрузки файлов
+- фоновых задач
+- синхронизации
+
+Bound Service
+```kotlin
+bindService()
+```
+
+📌 Характеристики:
+- живёт пока есть хотя бы один клиент
+- работает как client-server (IPC возможен)
+- уничтожается автоматически при отсутствии bind’ов
+
+📌 Используется для:
+- взаимодействия Activity ↔ Service
+- поток данных (музыка, сенсоры)
+- IPC между процессами
+
+Foreground Service (передний план)
+
+📌 Это обычный Service, который:
+- показывает постоянное уведомление
+- считается “видимым пользователю”
+- имеет высокий приоритет
+
+📌 Запуск:
+```kotlin
+startForegroundService()
+startForeground(notification)
+```
+
+📌 Используется для:
+- музыка (Media playback)
+- навигация (GPS tracking)
+- звонки
+- фитнес трекинг
+
+Lifecycle Service
+
+Started Service lifecycle:
+```
+onCreate()
+onStartCommand()
+(on running)
+onDestroy()
+```
+
+Bound Service lifecycle:
+```
+onCreate()
+onBind()
+onUnbind()
+onDestroy()
+```
+
+Combined (started + bound):
+- сервис живёт, пока:
+- есть start ИЛИ bind
 
 ### BroadcastReceiver
 BroadcastReceiver — компонент Android для получения broadcast-сообщений (Intent), 
@@ -243,6 +327,33 @@ protectionLevel:
 permission проверяется в system_server (AMS)
 
 ### ContentProvider
+ContentProvider — это компонент Android для:
+
+предоставления доступа к данным между приложениями
+унифицированного API поверх любых хранилищ (DB, файлы, сеть)
+работы через ContentResolver
+
+👉 Главная идея:
+инкапсуляция данных + межпроцессный доступ (IPC)
+
+Каждый ресурс описывается uri
+
+Методы соответствуют CRUD
+
+❗ Методы вызываются:
+- не на UI thread клиента
+- но внутри provider могут быть разные потоки
+
+ContentProvider может быть вызван параллельно
+нужно:
+- synchronized
+- Room (предпочтительно)
+- или собственные блокировки
+
+Права доступа (permissions)
+Типы:
+- readPermission
+- writePermission
 
 
 ### Установка МП
