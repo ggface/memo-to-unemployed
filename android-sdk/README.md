@@ -104,6 +104,143 @@ FLAG_ACTIVITY_CLEAR_TASK
 ### Service
 
 ### BroadcastReceiver
+BroadcastReceiver — компонент Android для получения broadcast-сообщений (Intent), 
+реализующий publish–subscribe модель.
+
+Используется для:
+- системных событий (BOOT_COMPLETED, BATTERY_LOW)
+- межприложного взаимодействия
+- внутренних событий приложения
+
+Основная идея:
+Кто то вызывает sendBroadcast(intent)
+ActivityManagerService находит все подходящие ресиверы
+определяет процесс
+если нужно → запускает процесс
+ActivityThread в app процессе вызывает onReceive(context, intent) на main thread
+
+есть исключение, если мы использовали для регистрации ресивера HandlerThread, то
+вызов onReceive будет на рабочем потоке HandlerThread
+
+Context в аргументах onReceive это ReceiverRestrictedContext (создается системой)
+Это обертка над ContextImpl
+
+IPC приходит через Binder thread
+НО ActivityThread перекладывает выполнение на main thread
+
+Есть дав типа:
+- Context-registered receivers (работает пока жив context)
+- Manifest-declared receivers (работает даже если приложение не запущено)
+
+Так же делятся на явные и неявные:
+
+Явные (Explicit) самый безопасный вариант
+Ты явно указываешь конкретный компонент, который должен обработать Intent.
+
+👉 система НЕ делает matching
+
+👉 сразу вызывает конкретный компонент
+
+```kotlin
+val intent = Intent(this, DetailsActivity::class.java)
+startActivity(intent)
+
+val intent = Intent(context, MyReceiver::class.java)
+sendBroadcast(intent)
+
+val intent = Intent().apply {
+    component = ComponentName(
+        "com.myapp",
+        "com.myapp.MyReceiver"
+    )
+}
+```
+
+Неявные (Implicit) Intent (уязвим)
+Ты описываешь что нужно сделать, но НЕ говоришь кому.
+```kotlin
+val intent = Intent(Intent.ACTION_VIEW).apply {
+    data = Uri.parse("https://google.com")
+}
+startActivity(intent)
+```
+система:
+- ищет все подходящие Activity
+- предлагает chooser (или выбирает default)
+
+Как происходит matching:
+Система сравнивает с intent-filter:
+
+📌 Ограничения
+- Время выполнения 10 секунд максимум иначе ANR
+- не делать долгие операции 
+- делегировать в:
+  - Service
+  - WorkManager
+  - Coroutine + goAsync() 
+
+Export flags (Android 12+)
+- EXPORTED → доступен другим apps
+- NOT_EXPORTED → только внутри приложения
+
+onReceive() вызывается в main thread
+
+goAsync() Позволяет выполнить асинхронную работу:
+- но всё равно есть лимит времени (~10–30 сек)
+```kotlin
+override fun onReceive(context: Context, intent: Intent) {
+    val pendingResult = goAsync()
+
+    CoroutineScope(Dispatchers.IO).launch {
+        // work
+        pendingResult.finish()
+    }
+}
+```
+
+Security
+Broadcast — глобальный канал
+любой app может 
+- отправить Intent
+- перехватить его
+- подменить данные
+
+👉 best practice:
+- использовать уникальные action (package prefix)
+- ограничивать export
+
+Custom permission (самый важный механизм)
+Шаг 1: объявить permission
+```kotlin
+registerReceiver(receiver, filter, permission, handler)
+```
+или в манифесте
+
+для безопасности почти всегда: signature
+```xml
+<permission
+        android:name="com.myapp.SEND_SECURE_BROADCAST"
+        android:protectionLevel="signature" />
+```
+
+protectionLevel:
+- normal: любой может получить
+- dangerous: через runtime permission
+- signature: только apps с тем же сертификатом
+
+Шаг 2: защитить receiver
+```xml
+<receiver
+    android:name=".SecureReceiver"
+    android:permission="com.myapp.SEND_SECURE_BROADCAST">
+    <intent-filter>
+        <action android:name="MY_SECURE_ACTION"/>
+    </intent-filter>
+</receiver>
+```
+
+только app с этим permission может вызвать receiver.
+permission проверяется в system_server (AMS)
 
 ### ContentProvider
 
