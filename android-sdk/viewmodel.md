@@ -47,7 +47,89 @@ Lifecycle:
 - onStart()
 - onResume()
 
-VM (ViewModel) переживает поворот, потому что она привязана к ViewModelStore, 
-который хранится в ActivityThread.mActivities 
-и не уничтожается при пересоздании Activity
-ViewModel связана с ActivityStore, а не с конкретным экземпляром Activity
+ViewModel переживает поворот экрана, потому что он хранится в ViewModelStore, 
+который привязан к ViewModelStoreOwner (обычно Activity).
+При configuration change Activity пересоздаётся, 
+но через механизм onRetainNonConfigurationInstance() система сохраняет 
+ViewModelStore и передаёт его в новую Activity через 
+getLastNonConfigurationInstance().
+
+Поэтому ViewModelProvider получает тот же самый ViewModel из 
+существующего store.
+
+vm живет в ViewModelStore,
+который по сути хранит HashMap<String, ViewModel>()
+
+Нашим ViewModelStore владеет интерфейс ViewModelStoreOwner, 
+его реализует ComponentActivity (так же Fragment и NavBackStackEntry)
+
+Внутри ComponentActivity есть
+```java
+NonConfigurationInstances mLastNonConfigurationInstances;
+```
+
+NonConfigurationInstances при пересоздании экрана будет храниться внутри
+ActivityThread в ActivityClientRecord
+
+перед уничтожением активити вызывается
+```java
+// Ты можешь вернуть объект, который переживёт конфиг-чейндж.
+@Override
+public Object onRetainNonConfigurationInstance() {
+    return new NonConfigurationInstances(
+            customObject,
+            viewModelStore
+    );
+}
+```
+
+а в новой активити можно вызвать:
+```java
+// Возвращает то, что ты сохранил.
+Object getLastNonConfigurationInstance()
+```
+новая активити:
+- получает старый ViewModelStore
+- и если у нас есть ранее созданные viewmodel, они будут переиспользованы
+
+Как создаётся ViewModel
+ViewModelProvider
+```kotlin
+val vm = ViewModelProvider(owner).get(MyViewModel::class.java)
+```
+Что он делает:
+- Берёт ViewModelStore у owner
+- Проверяет:
+  - есть ли уже ViewModel по ключу
+- Если есть → возвращает
+- Если нет → создаёт через Factory и кладёт в store
+
+Ключи ViewModel
+```
+"androidx.lifecycle.ViewModelProvider.DefaultKey:MyViewModel"
+```
+Можно задавать свои ключи
+
+ViewModel переживает rotation
+но НЕ переживает process death (для этого есть SavedStateHandle)
+
+### Восстановление после убийства процесса
+При process death ViewModel уничтожается, так как хранится в памяти.
+Система сохраняет только Bundle через onSaveInstanceState.
+При восстановлении Activity SavedStateRegistry восстанавливает данные из Bundle.
+ViewModel создаётся заново через SavedStateViewModelFactory, который извлекает сохранённое состояние и передаёт его в SavedStateHandle.
+Таким образом, состояние восстанавливается, но сам ViewModel — новый.
+
+
+Activity вызывает onSaveInstanceState(Bundle)
+ActivityThread сохраняет state
+SavedStateRegistry собирает state от:
+- FragmentManager
+- ViewModel (через SavedStateHandle)
+- других компонентов
+
+ActivityTaskManagerService хранит данные состояния пока процесс мертв
+
+Когда зигота создаст новый процесс
+и отработает ActivityThread
+SavedStateRegistry восстановит bundle
