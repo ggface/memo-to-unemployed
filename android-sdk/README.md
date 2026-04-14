@@ -8,6 +8,7 @@
 - [ViewModel](./viewmodel.md)
 - [PendingIntent](./pending-intent.md)
 - [Базы данных](./database.md)
+- [Как работают пуши](./push.md)
 
 ## Компоненты
 - [Activities](#activity)
