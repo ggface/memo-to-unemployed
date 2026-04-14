@@ -7,6 +7,7 @@
 - [Коллекции](collections.md)
 - [Строки](strings.md)
 - [Задачки](challenges-kotlin.md)
+- [Sealed class, interface](sealed.md)
 
 ### База внутри
 - [Properties](#properties)
