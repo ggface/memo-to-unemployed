@@ -1,6 +1,7 @@
 # MV* паттерны
 
 - [Паттерны для новичков: MVC vs MVP vs MVVM](https://habr.com/ru/articles/215605/)
+- [MVI vs MVVM](#чем-mvi-отличается-от-mvvm)
 
 Все MV* паттерны решают одни и те же задачи:
 - разделение ответственности
@@ -32,7 +33,7 @@ View → Intents → ViewModel → State → View
 
 // TODO Тема [Unidirectional data flow (UDF)](https://developer.android.com/develop/ui/compose/architecture#udf)
 
-Чем MVI отличается от MVVM?
+### Чем MVI отличается от MVVM?
 
 Ответ:
 
