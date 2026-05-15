@@ -4,6 +4,7 @@
 - [Анимации](animations.md)
 - [Задачки](challenges.md)
 
+Внутри:
 - [Composable](#composable)
 - [Compose Runtime](#compose-runtime)
 - [Side Effects](#side-effects)

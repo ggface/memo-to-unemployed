@@ -188,6 +188,8 @@ Combined (started + bound):
 - сервис живёт, пока:
 - есть start ИЛИ bind
 
+// TODO Описать пример взаимодействия с каждым типом сервиса
+
 ### BroadcastReceiver
 BroadcastReceiver — компонент Android для получения broadcast-сообщений (Intent), 
 реализующий publish–subscribe модель.
@@ -196,6 +198,21 @@ BroadcastReceiver — компонент Android для получения broad
 - системных событий (BOOT_COMPLETED, BATTERY_LOW)
 - межприложного взаимодействия
 - внутренних событий приложения
+
+Как система доставляет broadcast
+```
+App
+    -> Binder
+system_server
+    -> ActivityManagerService
+    -> BroadcastQueue
+    -> ProcessRecord
+    -> scheduleReceiver()
+app process
+    -> ActivityThread.H
+    -> ReceiverDispatcher
+    -> onReceive()
+```
 
 Основная идея:
 Кто то вызывает sendBroadcast(intent)
@@ -213,9 +230,11 @@ Context в аргументах onReceive это ReceiverRestrictedContext (со
 IPC приходит через Binder thread
 НО ActivityThread перекладывает выполнение на main thread
 
-Есть дав типа:
+Есть два типа:
 - Context-registered receivers (работает пока жив context)
 - Manifest-declared receivers (работает даже если приложение не запущено)
+
+// TODO ниже бардак, создал обсуждение https://chatgpt.com/share/6a041b57-ccc0-8329-a7fb-39326ee22473
 
 Так же делятся на явные и неявные:
 
@@ -276,9 +295,14 @@ goAsync() Позволяет выполнить асинхронную рабо�
 override fun onReceive(context: Context, intent: Intent) {
     val pendingResult = goAsync()
 
-    CoroutineScope(Dispatchers.IO).launch {
-        // work
-        pendingResult.finish()
+    CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+        try {
+            // выполняем работу
+        } finally {
+            // finish() ОБЯЗАТЕЛЕН.
+            // Иначе система считает receiver незавершенным.
+            pendingResult.finish()
+        }
     }
 }
 ```
@@ -351,7 +375,8 @@ ContentProvider может быть вызван параллельно
 - Room (предпочтительно)
 - или собственные блокировки
 
-Права доступа (permissions)
+Права доступа (permissions) // TODO - непонятно про что речь
+
 Типы:
 - readPermission
 - writePermission
@@ -363,7 +388,7 @@ ContentProvider может быть вызван параллельно
 Таким образом все его ресурсы не будут доступны другим приложениям
 Но и самому приложению недоступны ни ресурсы, ни запуск основных компонентов андроид из кода
 Для этого приложению нужен контекст
-Вообще для работы компонентов нежен и контекст и манифест
+Вообще для работы компонентов нужен и контекст и манифест
 
 Манифест сообщает системе андроид о наличии приложения,
 разрешениях для этого приложения
@@ -540,6 +565,7 @@ registerService(Context.ALARM_SERVICE, AlarmManager.class,
     }});
 ```
 
+// TODO что это здесь делает
 
 Activity->ContextThemeWrapper->ContextWrapper->Context
 

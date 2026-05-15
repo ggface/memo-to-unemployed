@@ -8,6 +8,7 @@
 
 - [Two Sum](#two-sum) https://leetcode.com/problems/two-sum/description/
 - [Реверс односвязного списка](#реверс-односвязного-списка)
+- [Palindrome Number](#palindrome-number)
 
 #### Two Sum
 
@@ -61,3 +62,7 @@ fun reverseList(head: ListNode?): ListNode? {
     return prev
 }
 ```
+
+### Palindrome Number
+TODO перенести
+https://chatgpt.com/share/6a0413c7-a0d4-8330-9623-2d66c67b58f1
